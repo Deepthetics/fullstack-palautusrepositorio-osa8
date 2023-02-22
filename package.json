@@ -1,0 +1,23 @@
+{
+  "name": "fullstack-palautusrepositorio-osa8",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Deepthetics/fullstack-palautusrepositorio-osa8.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Deepthetics/fullstack-palautusrepositorio-osa8/issues"
+  },
+  "homepage": "https://github.com/Deepthetics/fullstack-palautusrepositorio-osa8#readme",
+  "dependencies": {
+    "@apollo/server": "^4.4.0",
+    "graphql": "^16.6.0"
+  }
+}
