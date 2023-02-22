@@ -26,6 +26,10 @@ let authors = [
     name: 'Sandi Metz', // birthyear not known
     id: "afa5b6f3-344d-11e9-a414-719c6709cf3e",
   },
+  {
+    name: 'Reijo Mäki', // birthyear not known
+    id: "afa5b6f4-344d-11e9-a414-719c6709cf3e",
+  }
 ]
 
 /*
@@ -92,6 +96,13 @@ let books = [
     id: "afa5de04-344d-11e9-a414-719c6709cf3e",
     genres: ['classic', 'revolution']
   },
+  {
+    title: 'Pimeyden tango',
+    published: 1997,
+    author: 'Reijo Mäki',
+    id: "afa5de04-344d-11e9-a414-719c6709cf3e",
+    genres: ['crime']  
+  }
 ]
 
 /*
@@ -128,6 +139,10 @@ const typeDefs = `
       author: String!
       genres: [String!]!
     ): Book
+    editAuthor(
+      name: String!
+      setBornTo: Int!
+    ): Author
   }
 `
 
@@ -155,14 +170,21 @@ const resolvers = {
   Mutation: {
     addBook: (root, args) => {
       const newBook = { ...args, id: uuid() }
-      console.log(newBook)
       books = books.concat(newBook)
-      console.log(books)
       if (!authors.find(author => author.name === args.author)) {
         const newAuthor = { name: args.author, id: uuid() }
         authors = authors.concat(newAuthor)
       }
       return newBook
+    },
+    editAuthor: (root, args) => {
+      const author = authors.find(author => author.name === args.name)
+      if (!author) {
+        return null
+      }
+      const updatedAuthor = { ...author, born: args.setBornTo }
+      authors = authors.map(author => author.name === args.name ? updatedAuthor : author)
+      return updatedAuthor
     }
   }
 }
