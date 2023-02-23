@@ -1,3 +1,5 @@
+import NewBirthyear from './NewBirthyear'
+
 const Authors = ({ show, authors }) => {
   if (!show) {
     return null
@@ -26,6 +28,7 @@ const Authors = ({ show, authors }) => {
           ))}
         </tbody>
       </table>
+      <NewBirthyear />
     </div>
   )
 }
