@@ -1,5 +1,6 @@
 import { useMutation } from '@apollo/client'
 import { useState } from 'react'
+import AuthorsDropdown from './AuthorsDropdown'
 import { ALL_AUTHORS, SET_BIRTHYEAR } from '../queries'
 
 const NewBirthyear = () => {
@@ -23,12 +24,8 @@ const NewBirthyear = () => {
     <div>
       <h2>Set birthyear</h2>
       <form onSubmit={submit}>
-      <div>
-          name
-          <input
-            value={name}
-            onChange={({ target }) => setName(target.value)}
-          />
+        <div>
+          <AuthorsDropdown setName={setName} />
         </div>
         <div>
           birthyear
