@@ -1,4 +1,5 @@
 const { ApolloServer } = require('@apollo/server')
+const { GraphQLError } = require('graphql')
 const { startStandaloneServer } = require('@apollo/server/standalone')
 //const { v1: uuid } = require('uuid')
 
@@ -18,32 +19,6 @@ mongoose.connect(MONGODB_URI)
   .catch((error) => {
     console.log('error connecting to MongoDB', error.message)
   })
-
-let authors = [
-  {
-    name: 'Robert Martin',
-    id: "afa51ab0-344d-11e9-a414-719c6709cf3e",
-    born: 1952,
-  },
-  {
-    name: 'Martin Fowler',
-    id: "afa5b6f0-344d-11e9-a414-719c6709cf3e",
-    born: 1963
-  },
-  {
-    name: 'Fyodor Dostoevsky',
-    id: "afa5b6f1-344d-11e9-a414-719c6709cf3e",
-    born: 1821
-  },
-  { 
-    name: 'Joshua Kerievsky', // birthyear not known
-    id: "afa5b6f2-344d-11e9-a414-719c6709cf3e",
-  },
-  { 
-    name: 'Sandi Metz', // birthyear not known
-    id: "afa5b6f3-344d-11e9-a414-719c6709cf3e",
-  }
-]
 
 const typeDefs = `
   type Book {
@@ -107,15 +82,37 @@ const resolvers = {
   },
   Mutation: {
     addBook: async (root, args) => {
-      const author = await Author.findOne({ name: args.author })
+      let author = await Author.findOne({ name: args.author })
       if (!author) {
         const newAuthor = new Author({ name: args.author, born: null })
-        const createdAuthor = await newAuthor.save()
-        const newBook = new Book({ ...args, author: createdAuthor })
-        return newBook.save()
+
+        try {
+          author = await newAuthor.save()
+        } catch (error) {
+          throw new GraphQLError('Saving author failed', {
+            extensions: {
+              code: 'BAD_USER_INPUT',
+              invalidArgs: args.name,
+              error
+            }
+          })
+        }
       }
+
       const newBook = new Book({ ...args, author: author })
-      return newBook.save()
+      
+      try {
+        await newBook.save()
+      } catch (error) {
+        throw new GraphQLError('Saving book failed', {
+          extensions: {
+            code: 'INTERNAL_SERVER_ERROR',
+            invalidArgs: args.name,
+            error
+          }
+        })
+      }
+      return newBook
     },
     editAuthor: async (root, args) => {
       return Author.findOneAndUpdate({ name: args.name }, { born: args.setBornTo }, { new: true })
