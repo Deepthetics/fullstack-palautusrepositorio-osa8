@@ -18,6 +18,9 @@
   "homepage": "https://github.com/Deepthetics/fullstack-palautusrepositorio-osa8#readme",
   "dependencies": {
     "@apollo/server": "^4.4.0",
-    "graphql": "^16.6.0"
+    "dotenv": "^16.0.3",
+    "graphql": "^16.6.0",
+    "mongoose": "^6.10.0",
+    "mongoose-unique-validator": "^3.1.0"
   }
 }
