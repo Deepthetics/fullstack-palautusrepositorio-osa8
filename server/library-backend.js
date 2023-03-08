@@ -1,11 +1,12 @@
 const { ApolloServer } = require('@apollo/server')
 const { GraphQLError } = require('graphql')
 const { startStandaloneServer } = require('@apollo/server/standalone')
-//const { v1: uuid } = require('uuid')
+const jwt = require('jsonwebtoken')
 
 const mongoose = require('mongoose')
 const Author = require('./models/author')
 const Book = require('./models/book')
+const User = require('./models/user')
 
 require('dotenv').config()
 const MONGODB_URI = process.env.MONGODB_URI
@@ -36,11 +37,22 @@ const typeDefs = `
     bookCount: Int
   }
 
+  type User {
+    username: String!
+    favoriteGenre: String!
+    id: ID!
+  }
+  
+  type Token {
+    value: String!
+  }
+
   type Query {
     bookCount: Int!
     authorCount: Int!
     allBooks(name: String, genre: String): [Book!]!
     allAuthors: [Author!]!
+    me: User
   }
 
   type Mutation {
@@ -54,6 +66,14 @@ const typeDefs = `
       name: String!
       setBornTo: Int!
     ): Author
+    createUser(
+      username: String!
+      favoriteGenre: String!
+    ): User
+    login(
+      username: String!
+      password: String!
+    ): Token
   }
 `
 
@@ -75,13 +95,26 @@ const resolvers = {
       }
       return Book.find({}).populate('author')
     },
-    allAuthors: async () => Author.find({})
+    allAuthors: async () => Author.find({}),
+    me: async (root, args, context) => {
+      return context.currentUser
+    }
   },
   Author: {
     bookCount: async (root) => Book.countDocuments({ author: root._id })
   },
   Mutation: {
-    addBook: async (root, args) => {
+    addBook: async (root, args, context) => {
+      const currentUser = context.currentUser
+      
+      if (!currentUser) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: {
+            code: 'BAD_USER_INPUT'
+          }
+        })
+      }
+
       let author = await Author.findOne({ name: args.author })
       if (!author) {
         const newAuthor = new Author({ name: args.author, born: null })
@@ -106,7 +139,7 @@ const resolvers = {
       } catch (error) {
         throw new GraphQLError('Saving book failed', {
           extensions: {
-            code: 'INTERNAL_SERVER_ERROR',
+            code: 'BAD_USER_INPUT',
             invalidArgs: args.name,
             error
           }
@@ -114,8 +147,51 @@ const resolvers = {
       }
       return newBook
     },
-    editAuthor: async (root, args) => {
+    editAuthor: async (root, args, context) => {
+      const currentUser = context.currentUser
+      
+      if (!currentUser) {
+        throw new GraphQLError('Not authenticated', {
+          extensions: {
+            code: 'BAD_USER_INPUT'
+          }
+        })
+      }
+
       return Author.findOneAndUpdate({ name: args.name }, { born: args.setBornTo }, { new: true })
+    },
+    createUser: async (root, args) => {
+      const newUser = new User({ ...args })
+
+      try {
+        return await newUser.save()
+      } catch (error) {
+        throw new GraphQLError('Saving user failed', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args.name,
+            error
+          }
+        })
+      }
+    },
+    login: async (root, args) => {
+      const user = User.findOne({ username: args.username })
+
+      if (!user || args.password !== 'secret') {
+        throw new UserInputError('Wrong credentials', {
+          extensions: {
+            code: 'BAD_USER_INPUT'
+          }
+        })
+      }
+
+      const userForToken = {
+        username: user.username,
+        id: user._id
+      }
+
+      return { value: jwt.sign(userForToken, process.env.JWT_SECRET) }
     }
   }
 }
@@ -127,6 +203,19 @@ const server = new ApolloServer({
 
 startStandaloneServer(server, {
   listen: { port: 4000 },
+  context: async ({ req }) => {
+    const token = req.headers.authorization ? req.headers.authorization.replace('Bearer ', '') : null
+    if (token) {
+      try {
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
+        const currentUser = await User.findById(decodedToken.id)
+        return { currentUser }
+      } catch (error) {
+        throw new AuthenticationError('Invalid token')
+      }
+    }
+    return {}
+  }
 }).then(({ url }) => {
   console.log(`Server ready at ${url}`)
 })
