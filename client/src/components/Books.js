@@ -1,7 +1,7 @@
 import { useState } from "react"
 
 const Books = ({ show, books }) => {
-  const [filter, setFilter] = useState(null) // eslint-disable-line
+  const [filter, setFilter] = useState(null)
 
   if (!show) {
     return null
@@ -11,7 +11,6 @@ const Books = ({ show, books }) => {
     return <div>loading...</div>
   }
 
-  console.log(books.data.allBooks)
   const genres = books.data.allBooks.reduce((acc, book) => {
     book.genres.forEach((genre) => {
       if (!acc.includes(genre)) {
@@ -23,7 +22,7 @@ const Books = ({ show, books }) => {
 
   return (
     <div>
-      <h2>books</h2>
+      <h2>Books</h2>
       <table>
         <tbody>
           <tr>

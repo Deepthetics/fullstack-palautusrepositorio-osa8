@@ -204,17 +204,16 @@ const server = new ApolloServer({
 startStandaloneServer(server, {
   listen: { port: 4000 },
   context: async ({ req }) => {
-    const token = req.headers.authorization ? req.headers.authorization.replace('Bearer ', '') : null
-    if (token) {
-      try {
-        const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
-        const currentUser = await User.findById(decodedToken.id)
-        return { currentUser }
-      } catch (error) {
-        throw new AuthenticationError('Invalid token')
-      }
+    //console.log('token: ', req.headers.authorization)
+    const token = req.headers.authorization
+    if (token && token.startsWith('Bearer ')) {
+      //console.log('token in valid form')
+      const decodedToken = jwt.verify(token.substring(7), process.env.JWT_SECRET)
+      //console.log(decodedToken)
+      const currentUser = await User.findById(decodedToken.id)
+      //console.log(currentUser)
+      return { currentUser }
     }
-    return {}
   }
 }).then(({ url }) => {
   console.log(`Server ready at ${url}`)

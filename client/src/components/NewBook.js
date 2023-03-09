@@ -36,6 +36,7 @@ const NewBook = ({ show }) => {
 
   return (
     <div>
+      <h2>Add book</h2>
       <form onSubmit={submit}>
         <div>
           title
